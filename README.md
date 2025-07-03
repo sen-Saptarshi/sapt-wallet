@@ -9,11 +9,12 @@ A simple and secure cryptocurrency wallet generator.
 - Generates seed phrases and derives multiple wallet addresses
 - Securely stores generated wallets locally
 
-## Roadmap
+## Roadmap / Upcoming Features
 
-- Add support for more blockchain networks
-- Add a better user interface
+- Add basic RPC methods to interact with the generated wallets
 - Add more features to the wallet generator
+- Add a better user interface
+- Add support for more blockchain networks
 
 ## Contributing
 
