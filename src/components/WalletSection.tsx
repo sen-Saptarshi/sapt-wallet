@@ -15,25 +15,31 @@ import { toast } from "sonner";
 import { WalletCard } from "./WalletCard";
 import { WalletGenerator } from "@/utils/wallet-generator";
 import { WalletStorage } from "@/utils/storage";
+import { useMnemonic } from "@/contexts/mnemonic-context";
 import type { Blockchain, WalletKey } from "@/types/wallet";
 
 export default function WalletSection() {
+  const { mnemonic, hasMnemonic } = useMnemonic();
   const [wallets, setWallets] = useState<WalletKey[]>([]);
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [blockchain, setBlockchain] = useState<Blockchain>("solana");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mnemonic = WalletStorage.getMnemonic();
-
-  // Load existing wallets when component mounts or blockchain changes
+  // Load existing wallets when mnemonic or blockchain changes
   useEffect(() => {
-    loadExistingWallets();
-  }, [blockchain]);
+    if (hasMnemonic) {
+      loadExistingWallets();
+    } else {
+      // Clear wallets when no mnemonic
+      setWallets([]);
+      setError(null);
+    }
+  }, [mnemonic, blockchain, hasMnemonic]);
 
   const loadExistingWallets = async () => {
     if (!mnemonic) {
-      setError("No mnemonic found. Please generate a seed phrase first.");
+      setWallets([]);
       return;
     }
 
@@ -52,7 +58,6 @@ export default function WalletSection() {
         mnemonic,
         storedPaths
       );
-
       setWallets(regeneratedWallets);
     } catch (error) {
       const errorMessage =
@@ -127,7 +132,7 @@ export default function WalletSection() {
     setLayout((prev) => (prev === "grid" ? "list" : "grid"));
   };
 
-  if (!mnemonic) {
+  if (!hasMnemonic) {
     return (
       <div className="p-6 max-w-4xl mx-auto">
         <Alert>

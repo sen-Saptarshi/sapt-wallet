@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Textarea } from "@/components/ui/textarea";
-import { generateMnemonic, validateMnemonic } from "bip39";
-import { toast } from "sonner";
 import {
   Copy,
   Trash,
@@ -17,50 +15,21 @@ import {
   CheckCircle,
   RefreshCw,
 } from "lucide-react";
+import { useMnemonic } from "@/contexts/mnemonic-context";
+import { toast } from "sonner";
 
 export default function MnemonicSection() {
-  const [mnemonic, setMnemonic] = useState("");
+  const {
+    mnemonic,
+    hasMnemonic,
+    isLoading,
+    generateNewMnemonic,
+    importMnemonic,
+    clearMnemonic,
+  } = useMnemonic();
   const [showMnemonic, setShowMnemonic] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importValue, setImportValue] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  useEffect(() => {
-    const storedMnemonic = localStorage.getItem("mnemonic");
-    if (storedMnemonic) {
-      setMnemonic(storedMnemonic);
-    }
-  }, []);
-
-  const generateNewMnemonic = async () => {
-    setIsGenerating(true);
-    try {
-      // Add a small delay for better UX
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const newMnemonic = generateMnemonic();
-      setMnemonic(newMnemonic);
-      localStorage.setItem("mnemonic", newMnemonic);
-      setShowMnemonic(true);
-      toast.success("New seed phrase generated successfully!");
-    } catch (error) {
-      toast.error("Failed to generate seed phrase");
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const clearMnemonic = () => {
-    setMnemonic("");
-    setShowMnemonic(false);
-    localStorage.removeItem("mnemonic");
-    // Clear all wallet data
-    const keys = Object.keys(localStorage).filter(
-      (key) => key.startsWith("walletPaths-") || key.startsWith("walletData-")
-    );
-    keys.forEach((key) => localStorage.removeItem(key));
-    toast.success("Seed phrase and all wallets cleared");
-  };
 
   const copyMnemonic = async () => {
     try {
@@ -72,24 +41,17 @@ export default function MnemonicSection() {
   };
 
   const handleImport = () => {
-    const trimmedValue = importValue.trim();
-
-    if (!trimmedValue) {
-      toast.error("Please enter a seed phrase");
-      return;
+    const success = importMnemonic(importValue);
+    if (success) {
+      setIsImporting(false);
+      setImportValue("");
+      setShowMnemonic(true);
     }
+  };
 
-    if (!validateMnemonic(trimmedValue)) {
-      toast.error("Invalid seed phrase. Please check and try again.");
-      return;
-    }
-
-    setMnemonic(trimmedValue);
-    localStorage.setItem("mnemonic", trimmedValue);
-    setIsImporting(false);
-    setImportValue("");
-    setShowMnemonic(true);
-    toast.success("Seed phrase imported successfully!");
+  const handleClear = () => {
+    clearMnemonic();
+    setShowMnemonic(false);
   };
 
   const renderMnemonicWords = () => {
@@ -165,13 +127,13 @@ export default function MnemonicSection() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3">
-            <Button onClick={generateNewMnemonic} disabled={isGenerating}>
-              {isGenerating ? (
+            <Button onClick={generateNewMnemonic} disabled={isLoading}>
+              {isLoading ? (
                 <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Key className="w-4 h-4 mr-2" />
               )}
-              {mnemonic ? "Generate New" : "Generate Seed Phrase"}
+              {hasMnemonic ? "Generate New" : "Generate Seed Phrase"}
             </Button>
 
             <Button
@@ -181,8 +143,8 @@ export default function MnemonicSection() {
               Import Existing
             </Button>
 
-            {mnemonic && (
-              <Button variant="destructive" onClick={clearMnemonic}>
+            {hasMnemonic && (
+              <Button variant="destructive" onClick={handleClear}>
                 <Trash className="w-4 h-4 mr-2" />
                 Clear All
               </Button>
@@ -219,7 +181,7 @@ export default function MnemonicSection() {
           )}
 
           {/* Mnemonic Display */}
-          {mnemonic ? (
+          {hasMnemonic ? (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />

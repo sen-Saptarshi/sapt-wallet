@@ -9,7 +9,7 @@ export default function Footer() {
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
             <span>Made with</span>
             <Heart className="w-4 h-4 text-red-500" />
-            <span>by the Sapt</span>
+            <span>by Sapt</span>
           </div>
 
           <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap justify-center">
